@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>代購填單</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --blue: #1a56a0;
+  --blue-pale: #dbeafe;
+  --blue-dark: #1e3a5f;
+  --border: #dee2e6;
+  --text: #212529;
+  --text-muted: #6c757d;
+  --danger: #dc3545;
+  --gray-light: #f8f9fa;
+}
+body { font-family: -apple-system, 'Noto Sans TC', sans-serif; background: #eff6ff; color: var(--text); min-height: 100vh; padding-bottom: 100px; }
+.header { background: var(--blue-dark); color: white; padding: 20px 20px 28px; }
+.header h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.header .deadline { font-size: 12px; background: rgba(255,255,255,0.2); display: inline-block; padding: 3px 10px; border-radius: 20px; margin-bottom: 8px; }
+.header .note { font-size: 13px; opacity: 0.85; white-space: pre-line; line-height: 1.6; }
+.container { max-width: 600px; margin: -12px auto 0; padding: 0 14px; }
+.card { background: white; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 12px; overflow: hidden; }
+.card-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 14px 16px 0; }
+.card-body { padding: 12px 16px 16px; }
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+label { display: block; font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 5px; }
+input, select, textarea { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 9px; font-size: 16px; font-family: inherit; color: var(--text); background: white; -webkit-appearance: none; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue); }
+.product-name { font-size: 15px; font-weight: 600; padding: 14px 16px 4px; }
+.product-price { font-size: 12px; color: var(--text-muted); padding: 0 16px 12px; }
+.badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 600; vertical-align: middle; margin-left: 6px; }
+.badge-grid { background: var(--blue-pale); color: var(--blue-dark); }
+.badge-single { background: #e7f3ff; color: #1a6eb5; }
+.grid-wrap { overflow-x: auto; padding: 0 0 4px; }
+.grid-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.grid-table th { color: var(--text-muted); font-weight: 400; padding: 5px 4px; text-align: center; font-size: 12px; }
+.grid-table td { padding: 6px 4px; text-align: center; border-top: 1px solid #f0f0f0; }
+.grid-table td:first-child { text-align: left; padding-left: 16px; font-weight: 500; }
+.subtotal-card { background: var(--blue-dark); border-radius: 14px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.subtotal-label { color: rgba(255,255,255,0.75); font-size: 13px; }
+.subtotal-amount { color: white; font-size: 24px; font-weight: 700; }
+.section-divider { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 4px 6px; }
+.confirm-check { display: flex; align-items: flex-start; gap: 10px; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+.confirm-check input[type=checkbox] { width: 20px; height: 20px; margin-top: 1px; flex-shrink: 0; -webkit-appearance: checkbox; }
+.confirm-check label { font-size: 13px; color: #92400e; margin: 0; font-weight: 500; }
+.submit-btn { width: 100%; padding: 16px; background: var(--blue); color: white; border: none; border-radius: 12px; font-size: 17px; font-weight: 700; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+.submit-btn:active { opacity: 0.85; }
+.submit-btn:disabled { background: #aaa; }
+.loading { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 15px; }
+.success-screen { text-align: center; padding: 60px 20px; }
+.success-icon { font-size: 56px; margin-bottom: 16px; }
+.success-screen h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: var(--blue-dark); }
+.success-screen p { font-size: 14px; color: var(--text-muted); line-height: 1.7; }
+.required-star { color: var(--danger); margin-left: 2px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.custom-num { width: 52px !important; padding: 4px 6px !important; font-size: 13px !important; border: 1.5px solid var(--border); border-radius: 6px; text-align: center; }
+.qty-wrap { display: flex; align-items: center; gap: 12px; padding: 0 16px 16px; }
+.qty-ctrl { display: flex; align-items: center; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+.qty-ctrl button { width: 44px; height: 44px; border: none; background: var(--gray-light); font-size: 22px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.qty-ctrl input { width: 52px; height: 44px; border: none; border-left: 1.5px solid var(--border); border-right: 1.5px solid var(--border); text-align: center; font-size: 16px; font-weight: 600; border-radius: 0; -webkit-appearance: none; }
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">載入中...</div></div>
+
+<script>
+// ====================================================
+//  ⚙️ 填入你的 GAS 部署網址
+// ====================================================
+var GAS_URL = '請填入你的GAS部署網址';
+// 格式：https://script.google.com/macros/s/【亂碼】/exec
+// ====================================================
+
+var groupData = null;
+var subtotal = 0;
+var groupId = new URLSearchParams(window.location.search).get('g') || '';
+
+if (!groupId) {
+  document.getElementById('app').innerHTML = '<div class="loading">找不到團務資訊，請確認連結是否正確。</div>';
+} else {
+  fetch(GAS_URL + '?action=getGroup&g=' + groupId)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data) {
+        document.getElementById('app').innerHTML = '<div class="loading">此團務不存在或已結束。</div>';
+        return;
+      }
+      groupData = data;
+      renderForm();
+    })
+    .catch(function() {
+      document.getElementById('app').innerHTML = '<div class="loading">載入失敗，請重試。</div>';
+    });
+}
+
+function renderForm() {
+  var g = groupData;
+  var accountOptions = (g.accounts || []).map(function(a) {
+    return '<option value="' + a.label + '|' + a.bank + '|' + a.number + '">' + a.label + '（' + a.bank + '）' + a.number + '</option>';
+  }).join('');
+  var shippingOptions = (g.shippingOptions || []).map(function(s) {
+    return '<option value="' + s + '">' + s + '</option>';
+  }).join('');
+  var productsHtml = (g.products || []).map(function(p) {
+    return renderProduct(p, g.members || []);
+  }).join('');
+
+  var html = '<div class="header">'
+    + (g.deadline ? '<div class="deadline">匯款截止：' + g.deadline + '</div>' : '')
+    + '<h1>' + g.name + '</h1>'
+    + (g.note ? '<div class="note">' + g.note + '</div>' : '')
+    + '</div>'
+    + '<div class="container">'
+    + '<div class="card" style="margin-top:16px"><div class="card-title">基本資料</div><div class="card-body">'
+    + '<div class="field"><label>社群暱稱 <span class="required-star">*</span></label><input id="f-nickname" placeholder="Line 社群內的暱稱" /></div>'
+    + '<div class="field"><label>訂購者姓名 <span class="required-star">*</span></label><input id="f-realname" placeholder="真實姓名（出貨確認用）" /></div>'
+    + '<div class="field"><label>Email <span class="required-star">*</span></label><input id="f-email" type="email" placeholder="用於到貨通知" /></div>'
+    + '</div></div>'
+    + productsHtml
+    + '<div class="subtotal-card"><div><div class="subtotal-label">品項小計</div><div class="subtotal-amount">NT$ <span id="subtotal-num">0</span></div></div><div style="text-align:right;color:rgba(255,255,255,0.7);font-size:12px;">系統自動計算<br>請確認後填寫匯款資訊</div></div>'
+    + '<div class="section-divider">匯款資訊</div>'
+    + '<div class="card"><div class="card-body">'
+    + '<div class="confirm-check"><input type="checkbox" id="f-confirm" /><label for="f-confirm">我已確認訂購品項正確，並了解匯款後需填寫以下資訊</label></div>'
+    + '<div class="field"><label>匯款至哪個帳號 <span class="required-star">*</span></label><select id="f-account"><option value="">請選擇</option>' + accountOptions + '</select></div>'
+    + '<div class="row2"><div class="field"><label>匯款帳號後五碼 <span class="required-star">*</span></label><input id="f-last5" placeholder="無卡請填無卡" /></div><div class="field"><label>匯款金額 <span class="required-star">*</span></label><input id="f-amount" type="number" inputmode="numeric" placeholder="實際匯出金額" /></div></div>'
+    + '<div class="row2"><div class="field"><label>匯款日期 <span class="required-star">*</span></label><input id="f-date" type="date" /></div><div class="field"><label>匯款時間（大約）</label><input id="f-time" type="time" /></div></div>'
+    + '<div class="field"><label>出貨方式 <span class="required-star">*</span></label><select id="f-shipping"><option value="">請選擇</option>' + shippingOptions + '</select></div>'
+    + '<div class="field"><label>備註</label><textarea id="f-note" placeholder="有任何特殊需求請在此說明" rows="2"></textarea></div>'
+    + '</div></div>'
+    + '<button class="submit-btn" id="submit-btn" onclick="submitForm()">確認送出訂單</button>'
+    + '<div style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:12px;padding-bottom:20px">送出後請截圖保存，如需上傳無卡明細請至 Line / IG 私訊補傳</div>'
+    + '</div>';
+
+  document.getElementById('app').innerHTML = html;
+  updateSubtotal();
+}
+
+function renderProduct(product, members) {
+  var name = product.name;
+  var price = Number(product.price).toLocaleString();
+
+  if (product.type === 'grid') {
+    var memberRows = members.map(function(m) {
+      var radios = [0,1,2,3,4,5].map(function(n) {
+        return '<td><input type="radio" name="gr_' + name + '_' + m + '" value="' + n + '" ' + (n===0?'checked':'') + ' onchange="updateSubtotal()" /></td>';
+      }).join('');
+      return '<tr><td>' + m + '</td>' + radios
+        + '<td><input class="custom-num" type="number" inputmode="numeric" min="0" max="99" placeholder="自填" data-gc="' + name + '_' + m + '" oninput="onGC(this,\'' + name + '\',\'' + m + '\')" /></td></tr>';
+    }).join('');
+    return '<div class="card"><div class="product-name">' + name + ' <span class="badge badge-grid">成員選款</span></div>'
+      + '<div class="product-price">NT$ ' + price + ' / 個</div>'
+      + '<div class="grid-wrap"><table class="grid-table"><tr><th></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>自填</th></tr>'
+      + memberRows + '</table></div><div style="height:4px"></div></div>';
+  }
+
+  if (product.type === 'gridCustom') {
+    var opts = (product.options || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    var optRows = opts.map(function(opt) {
+      var radios = [0,1,2,3,4,5].map(function(n) {
+        return '<td><input type="radio" name="gc_' + name + '_' + opt + '" value="' + n + '" ' + (n===0?'checked':'') + ' onchange="updateSubtotal()" /></td>';
+      }).join('');
+      return '<tr><td>' + opt + '</td>' + radios + '</tr>';
+    }).join('');
+    return '<div class="card"><div class="product-name">' + name + ' <span class="badge badge-grid">款式選擇</span></div>'
+      + '<div class="product-price">NT$ ' + price + ' / 個</div>'
+      + '<div class="grid-wrap"><table class="grid-table"><tr><th></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>'
+      + optRows + '</table></div><div style="height:4px"></div></div>';
+  }
+
+  if (product.type === 'size') {
+    var sizes = (product.sizes || product.options || 'XS,S,M,L,XL,XXL').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    var sizeRows = sizes.map(function(sz) {
+      var radios = [0,1,2,3,4,5].map(function(n) {
+        return '<td><input type="radio" name="sz_' + name + '_' + sz + '" value="' + n + '" ' + (n===0?'checked':'') + ' onchange="updateSubtotal()" /></td>';
+      }).join('');
+      return '<tr><td>' + sz + '</td>' + radios
+        + '<td><input class="custom-num" type="number" inputmode="numeric" min="0" max="99" placeholder="自填" data-sc="' + name + '_' + sz + '" oninput="onSC(this,\'' + name + '\',\'' + sz + '\')" /></td></tr>';
+    }).join('');
+    return '<div class="card"><div class="product-name">' + name + ' <span class="badge" style="background:#fef3c7;color:#92400e">服裝尺寸</span></div>'
+      + '<div class="product-price">NT$ ' + price + ' / 件</div>'
+      + '<div class="grid-wrap"><table class="grid-table"><tr><th></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>自填</th></tr>'
+      + sizeRows + '</table></div><div style="height:4px"></div></div>';
+  }
+
+  var prodKey = name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g,'_');
+  return '<div class="card"><div class="product-name">' + name + ' <span class="badge badge-single">數量選擇</span></div>'
+    + '<div class="product-price">NT$ ' + price + ' / 個</div>'
+    + '<div class="qty-wrap"><div class="qty-ctrl">'
+    + '<button onclick="adj(\'' + name + '\',-1)">−</button>'
+    + '<input type="number" inputmode="numeric" min="0" max="99" value="0" id="qty_' + prodKey + '" onchange="updateSubtotal()" oninput="updateSubtotal()" />'
+    + '<button onclick="adj(\'' + name + '\',1)">＋</button>'
+    + '</div><span style="font-size:13px;color:var(--text-muted)">件</span></div></div>';
+}
+
+function adj(n, d) {
+  var k = n.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g,'_');
+  var el = document.getElementById('qty_' + k);
+  if (!el) return;
+  el.value = Math.max(0, (parseInt(el.value)||0) + d);
+  updateSubtotal();
+}
+
+function onGC(input, name, member) {
+  if ((parseInt(input.value)||0) > 0) {
+    var rs = document.querySelectorAll('input[name="gr_' + name + '_' + member + '"]');
+    for (var i=0; i<rs.length; i++) rs[i].checked = false;
+  }
+  updateSubtotal();
+}
+
+function onSC(input, name, sz) {
+  if ((parseInt(input.value)||0) > 0) {
+    var rs = document.querySelectorAll('input[name="sz_' + name + '_' + sz + '"]');
+    for (var i=0; i<rs.length; i++) rs[i].checked = false;
+  }
+  updateSubtotal();
+}
+
+function updateSubtotal() {
+  var total = 0;
+  var products = groupData.products || [];
+  var members = groupData.members || [];
+  products.forEach(function(p) {
+    var price = Number(p.price) || 0;
+    var name = p.name;
+    if (p.type === 'grid') {
+      members.forEach(function(m) {
+        var ce = document.querySelector('[data-gc="' + name + '_' + m + '"]');
+        var cv = ce ? (parseInt(ce.value)||0) : 0;
+        if (cv > 0) { total += price * cv; }
+        else { var c = document.querySelector('input[name="gr_' + name + '_' + m + '"]:checked'); if (c) total += price * parseInt(c.value); }
+      });
+    } else if (p.type === 'gridCustom') {
+      (p.options||'').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(opt) {
+        var c = document.querySelector('input[name="gc_' + name + '_' + opt + '"]:checked');
+        if (c) total += price * parseInt(c.value);
+      });
+    } else if (p.type === 'size') {
+      (p.sizes||p.options||'XS,S,M,L,XL,XXL').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(sz) {
+        var ce = document.querySelector('[data-sc="' + name + '_' + sz + '"]');
+        var cv = ce ? (parseInt(ce.value)||0) : 0;
+        if (cv > 0) { total += price * cv; }
+        else { var c = document.querySelector('input[name="sz_' + name + '_' + sz + '"]:checked'); if (c) total += price * parseInt(c.value); }
+      });
+    } else {
+      var k = name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g,'_');
+      var el = document.getElementById('qty_' + k);
+      if (el) total += price * (parseInt(el.value)||0);
+    }
+  });
+  subtotal = total;
+  var el = document.getElementById('subtotal-num');
+  if (el) el.textContent = total.toLocaleString();
+}
+
+function getItems() {
+  var items = [];
+  var products = groupData.products || [];
+  var members = groupData.members || [];
+  products.forEach(function(p) {
+    var name = p.name;
+    if (p.type === 'grid') {
+      var q = {};
+      members.forEach(function(m) {
+        var ce = document.querySelector('[data-gc="' + name + '_' + m + '"]');
+        var cv = ce ? (parseInt(ce.value)||0) : 0;
+        if (cv > 0) { q[m] = cv; }
+        else { var c = document.querySelector('input[name="gr_' + name + '_' + m + '"]:checked'); q[m] = c ? parseInt(c.value) : 0; }
+      });
+      items.push({productName: name, quantities: q});
+    } else if (p.type === 'gridCustom') {
+      var q = {};
+      (p.options||'').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(opt) {
+        var c = document.querySelector('input[name="gc_' + name + '_' + opt + '"]:checked');
+        q[opt] = c ? parseInt(c.value) : 0;
+      });
+      items.push({productName: name, quantities: q});
+    } else if (p.type === 'size') {
+      var q = {};
+      (p.sizes||p.options||'XS,S,M,L,XL,XXL').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(sz) {
+        var ce = document.querySelector('[data-sc="' + name + '_' + sz + '"]');
+        var cv = ce ? (parseInt(ce.value)||0) : 0;
+        if (cv > 0) { q[sz] = cv; }
+        else { var c = document.querySelector('input[name="sz_' + name + '_' + sz + '"]:checked'); q[sz] = c ? parseInt(c.value) : 0; }
+      });
+      items.push({productName: name, quantities: q});
+    } else {
+      var k = name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g,'_');
+      var el = document.getElementById('qty_' + k);
+      items.push({productName: name, qty: el ? (parseInt(el.value)||0) : 0});
+    }
+  });
+  return items;
+}
+
+function submitForm() {
+  var nickname = document.getElementById('f-nickname').value.trim();
+  var realName = document.getElementById('f-realname').value.trim();
+  var email = document.getElementById('f-email').value.trim();
+  var account = document.getElementById('f-account').value;
+  var last5 = document.getElementById('f-last5').value.trim();
+  var amount = document.getElementById('f-amount').value.trim();
+  var date = document.getElementById('f-date').value;
+  var shipping = document.getElementById('f-shipping').value;
+  var confirmed = document.getElementById('f-confirm').checked;
+
+  if (!nickname || !realName) { alert('請填寫社群暱稱和姓名'); return; }
+  if (!email) { alert('請填寫 Email'); return; }
+  if (!confirmed) { alert('請勾選確認訂購品項正確'); return; }
+  if (!account) { alert('請選擇匯款帳號'); return; }
+  if (!last5) { alert('請填寫匯款帳號後五碼'); return; }
+  if (!amount) { alert('請填寫匯款金額'); return; }
+  if (!date) { alert('請選擇匯款日期'); return; }
+  if (!shipping) { alert('請選擇出貨方式'); return; }
+
+  var parts = account.split('|');
+  var btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = '送出中...';
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'submitOrder',
+      groupId: groupId,
+      formData: {
+        nickname: nickname, realName: realName, email: email,
+        items: getItems(),
+        bankAccount: parts[0] + '(' + parts[1] + ') ' + parts[2],
+        bankLast5: last5,
+        transferDate: date,
+        transferTime: document.getElementById('f-time').value || '',
+        transferAmount: amount,
+        shipping: shipping,
+        note: document.getElementById('f-note').value.trim()
+      }
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.success) {
+      document.getElementById('app').innerHTML = '<div class="container"><div class="success-screen"><div class="success-icon">✅</div><h2>填單完成！</h2><p>感謝你的訂購，我們會盡快確認匯款資訊。<br>如為無卡付款，請記得至 Line / IG 私訊補傳明細截圖。<br><br>品項小計：<strong>NT$ ' + (res.subtotal||0).toLocaleString() + '</strong></p></div></div>';
+    } else {
+      btn.disabled = false;
+      btn.textContent = '確認送出訂單';
+      alert('送出失敗：' + (res.error || '請重試'));
+    }
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.textContent = '確認送出訂單';
+    alert('送出失敗，請重試');
+  });
+}
+</script>
+</body>
+</html>

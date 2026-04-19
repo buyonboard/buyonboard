@@ -145,7 +145,7 @@ function renderForm() {
     + '<div class="card" style="margin-top:16px"><div class="card-title">基本資料</div><div class="card-body">'
     + '<div class="field"><label>社群暱稱 <span class="required-star">*</span></label><input id="f-nickname" placeholder="Line 社群內的暱稱" /></div>'
     + '<div class="field"><label>訂購者姓名 <span class="required-star">*</span></label><input id="f-realname" placeholder="真實姓名（出貨確認用）" /></div>'
-    + '<div class="field"><label>Email <span class="required-star">*</span></label><input id="f-email" type="email" placeholder="用於到貨&賣場通知" /></div>'    
+    + '<div class="field"><label>Email <span class="required-star">*</span></label><input id="f-email" type="email" placeholder="用於到貨通知" /></div>'
     + '</div></div>'
     + productsHtml
     + '<div class="subtotal-card"><div><div class="subtotal-label">品項小計</div><div class="subtotal-amount">NT$ <span id="subtotal-num">0</span></div></div><div style="text-align:right;color:rgba(255,255,255,0.7);font-size:12px;">系統自動計算<br>請確認後填寫匯款資訊</div></div>'
@@ -377,6 +377,7 @@ function getItems() {
 function submitForm() {
   var nickname = document.getElementById('f-nickname').value.trim();
   var realName = document.getElementById('f-realname').value.trim();
+  var email = document.getElementById('f-email').value.trim();
   var account = document.getElementById('f-account').value;
   var last5 = document.getElementById('f-last5').value.trim();
   var amount = document.getElementById('f-amount').value.trim();

@@ -73,7 +73,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 // ====================================================
 //  ⚙️ 填入你的 GAS 部署網址
 // ====================================================
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbz9XKxL9Vg83xVPaDykdIboSQc874Z0rSxBsI-xbvvv2VYNyP41EY0s6Upm3tpDdKXMtA/exec';
+var GAS_URL = '請填入你的GAS部署網址';
 // 格式：https://script.google.com/macros/s/【亂碼】/exec
 // ====================================================
 
@@ -168,7 +168,7 @@ function renderProduct(product, members) {
       var cells = [0,1,2,3,4,5].map(function(n) {
         return '<td><span class="qty-cell' + (n===0?' active':'') + '" onclick="selectCell(this,\'' + name + '\',\'' + opt + '\',\'gc\',' + n + ')">' + n + '</span></td>';
       }).join('');
-      return '<tr><td>' + opt + '</td>' + cells + '</tr>';
+      return '<tr data-row-key="' + name + '_' + opt + '"><td>' + opt + '</td>' + cells + '</tr>';
     }).join('');
     return '<div class="card"><div class="product-name">' + name + ' <span class="badge badge-grid">款式選擇</span></div>'
       + '<div class="product-price">NT$ ' + price + ' / 個</div>'
@@ -241,17 +241,27 @@ function onSC(input, name, sz) {
 }
 
 function getGridVal(name, key, prefix) {
-  var dataAttr = prefix === 'sz' ? '[data-sc="' + name + '_' + key + '"]' : '[data-gc="' + name + '_' + key + '"]';
-  var customEl = document.querySelector(dataAttr);
-  var customVal = customEl ? (parseInt(customEl.value)||0) : 0;
-  if (customVal > 0) return customVal;
-  // 找同一列的 active 按鈕
-  var rows = document.querySelectorAll('tr');
-  for (var i = 0; i < rows.length; i++) {
-    var firstTd = rows[i].querySelector('td:first-child');
-    if (firstTd && firstTd.textContent.trim() === key) {
-      var active = rows[i].querySelector('.qty-cell.active');
-      if (active) return parseInt(active.textContent) || 0;
+  if (prefix === 'gr') {
+    var customEl = document.querySelector('[data-gc="' + name + '_' + key + '"]');
+    var customVal = customEl ? (parseInt(customEl.value)||0) : 0;
+    if (customVal > 0) return customVal;
+    if (customEl) {
+      var active = customEl.parentElement.parentElement.querySelector('.qty-cell.active');
+      return active ? (parseInt(active.textContent)||0) : 0;
+    }
+  } else if (prefix === 'sz') {
+    var customEl = document.querySelector('[data-sc="' + name + '_' + key + '"]');
+    var customVal = customEl ? (parseInt(customEl.value)||0) : 0;
+    if (customVal > 0) return customVal;
+    if (customEl) {
+      var active = customEl.parentElement.parentElement.querySelector('.qty-cell.active');
+      return active ? (parseInt(active.textContent)||0) : 0;
+    }
+  } else if (prefix === 'gc') {
+    var row = document.querySelector('[data-row-key="' + name + '_' + key + '"]');
+    if (row) {
+      var active = row.querySelector('.qty-cell.active');
+      return active ? (parseInt(active.textContent)||0) : 0;
     }
   }
   return 0;

@@ -92,6 +92,28 @@ if (!groupId) {
         return;
       }
       groupData = data;
+
+      // 檢查是否已超過截止時間（台灣時間）
+      if (data.deadline) {
+        var match = data.deadline.match(/(\d+)\/(\d+)\s+(\d+):(\d+)/);
+        if (match) {
+          var now = new Date();
+          // 取得現在的台灣時間
+          var twNow = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+          var year = twNow.getUTCFullYear();
+          var deadlineDate = new Date(Date.UTC(year, parseInt(match[1])-1, parseInt(match[2]), parseInt(match[3]), parseInt(match[4])));
+          if (twNow > deadlineDate) {
+            document.getElementById('app').innerHTML =
+              '<div class="container"><div class="success-screen">'
+              + '<div class="success-icon">🔒</div>'
+              + '<h2>填單已截止</h2>'
+              + '<p>收單囉!!!<br>如有任何問題請私訊官方Line @099patill 或是 IG:@buyonboard。</p>'
+              + '</div></div>';
+            return;
+          }
+        }
+      }
+
       renderForm();
     })
     .catch(function() {

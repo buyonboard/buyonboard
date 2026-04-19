@@ -101,6 +101,9 @@ if (!groupId) {
 
 function renderForm() {
   var g = groupData;
+
+  // 截止日直接顯示（已是台灣時間純文字）
+  var deadlineText = g.deadline ? g.deadline + '（台灣時間）' : '';
   var accountOptions = (g.accounts || []).map(function(a) {
     return '<option value="' + a.label + '|' + a.bank + '|' + a.number + '">' + a.label + '（' + a.bank + '）' + a.number + '</option>';
   }).join('');
@@ -112,7 +115,7 @@ function renderForm() {
   }).join('');
 
   var html = '<div class="header">'
-    + (g.deadline ? '<div class="deadline">匯款截止：' + g.deadline + '</div>' : '')
+    + (deadlineText ? '<div class="deadline">匯款截止：' + deadlineText + '</div>' : '')
     + '<h1>' + g.name + '</h1>'
     + (g.note ? '<div class="note">' + g.note + '</div>' : '')
     + '</div>'
@@ -131,7 +134,7 @@ function renderForm() {
     + '<div class="row2"><div class="field"><label>匯款帳號後五碼 <span class="required-star">*</span></label><input id="f-last5" placeholder="無卡請填無卡" /></div><div class="field"><label>匯款金額 <span class="required-star">*</span></label><input id="f-amount" type="number" inputmode="numeric" placeholder="實際匯出金額" /></div></div>'
     + '<div class="row2"><div class="field"><label>匯款日期 <span class="required-star">*</span></label><input id="f-date" type="date" /></div><div class="field"><label>匯款時間（大約）</label><input id="f-time" type="time" /></div></div>'
     + '<div class="field"><label>出貨方式 <span class="required-star">*</span></label><select id="f-shipping"><option value="">請選擇</option>' + shippingOptions + '</select></div>'
-    + '<div class="field"><label>備註</label><textarea id="f-note" placeholder="有任何特殊需求請在此說明" rows="2"></textarea></div>'
+    + '<div class="field"><label>備註</label><textarea id="f-note" placeholder="有任何特殊需求請在此說明" rows="5" style="resize:vertical;min-height:100px;"></textarea></div>'
     + '</div></div>'
     + '<button class="submit-btn" id="submit-btn" onclick="submitForm()">確認送出訂單</button>'
     + '<div style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:12px;padding-bottom:20px">送出後請截圖保存，如需上傳無卡明細請至 Line / IG 私訊補傳</div>'

@@ -73,7 +73,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 // ====================================================
 //  ⚙️ 填入你的 GAS 部署網址
 // ====================================================
-var GAS_URL = '請填入你的GAS部署網址';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbz9XKxL9Vg83xVPaDykdIboSQc874Z0rSxBsI-xbvvv2VYNyP41EY0s6Upm3tpDdKXMtA/exec';
 // 格式：https://script.google.com/macros/s/【亂碼】/exec
 // ====================================================
 
@@ -151,7 +151,7 @@ function renderProduct(product, members) {
   if (product.type === 'grid') {
     var memberRows = members.map(function(m) {
       var cells = [0,1,2,3,4,5].map(function(n) {
-        return '<td><span class="qty-cell' + (n===0?' active':'') + '" onclick="selectCell(this,\'' + name + '\',\'' + m + '\',\'gr\',' + n + ')">' + n + '</span></td>';
+        return '<td><span class="qty-cell' + (n===0?' active':'') + '" data-cell-key="' + name + '_' + m + '" onclick="selectCell(this,\'' + name + '\',\'' + m + '\',\'gr\',' + n + ')">' + n + '</span></td>';
       }).join('');
       return '<tr><td>' + m + '</td>' + cells
         + '<td><input class="custom-num" type="number" inputmode="numeric" min="0" max="99" placeholder="自填" data-gc="' + name + '_' + m + '" oninput="onGC(this,\'' + name + '\',\'' + m + '\')" /></td></tr>';
@@ -166,7 +166,7 @@ function renderProduct(product, members) {
     var opts = (product.options || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
     var optRows = opts.map(function(opt) {
       var cells = [0,1,2,3,4,5].map(function(n) {
-        return '<td><span class="qty-cell' + (n===0?' active':'') + '" onclick="selectCell(this,\'' + name + '\',\'' + opt + '\',\'gc\',' + n + ')">' + n + '</span></td>';
+        return '<td><span class="qty-cell' + (n===0?' active':'') + '" data-cell-key="' + name + '_' + opt + '" onclick="selectCell(this,\'' + name + '\',\'' + opt + '\',\'gc\',' + n + ')">' + n + '</span></td>';
       }).join('');
       return '<tr data-row-key="' + name + '_' + opt + '"><td>' + opt + '</td>' + cells + '</tr>';
     }).join('');
@@ -180,7 +180,7 @@ function renderProduct(product, members) {
     var sizes = (product.sizes || product.options || 'XS,S,M,L,XL,XXL').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
     var sizeRows = sizes.map(function(sz) {
       var cells = [0,1,2,3,4,5].map(function(n) {
-        return '<td><span class="qty-cell' + (n===0?' active':'') + '" onclick="selectCell(this,\'' + name + '\',\'' + sz + '\',\'sz\',' + n + ')">' + n + '</span></td>';
+        return '<td><span class="qty-cell' + (n===0?' active':'') + '" data-cell-key="' + name + '_' + sz + '" onclick="selectCell(this,\'' + name + '\',\'' + sz + '\',\'sz\',' + n + ')">' + n + '</span></td>';
       }).join('');
       return '<tr><td>' + sz + '</td>' + cells
         + '<td><input class="custom-num" type="number" inputmode="numeric" min="0" max="99" placeholder="自填" data-sc="' + name + '_' + sz + '" oninput="onSC(this,\'' + name + '\',\'' + sz + '\')" /></td></tr>';
@@ -271,18 +271,31 @@ function updateSubtotal() {
   var total = 0;
   var products = groupData.products || [];
   var members = groupData.members || [];
+
   products.forEach(function(p) {
     var price = Number(p.price) || 0;
     var name = p.name;
+
     if (p.type === 'grid') {
-      members.forEach(function(m) { total += price * getGridVal(name, m, 'gr'); });
+      members.forEach(function(m) {
+        var customEl = document.querySelector('[data-gc="' + name + '_' + m + '"]');
+        var customVal = customEl ? (parseInt(customEl.value)||0) : 0;
+        if (customVal > 0) { total += price * customVal; return; }
+        var active = document.querySelector('[data-cell-key="' + name + '_' + m + '"].active');
+        if (active) total += price * (parseInt(active.textContent)||0);
+      });
     } else if (p.type === 'gridCustom') {
       (p.options||'').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(opt) {
-        total += price * getGridVal(name, opt, 'gc');
+        var active = document.querySelector('[data-cell-key="' + name + '_' + opt + '"].active');
+        if (active) total += price * (parseInt(active.textContent)||0);
       });
     } else if (p.type === 'size') {
       (p.sizes||p.options||'XS,S,M,L,XL,XXL').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(sz) {
-        total += price * getGridVal(name, sz, 'sz');
+        var customEl = document.querySelector('[data-sc="' + name + '_' + sz + '"]');
+        var customVal = customEl ? (parseInt(customEl.value)||0) : 0;
+        if (customVal > 0) { total += price * customVal; return; }
+        var active = document.querySelector('[data-cell-key="' + name + '_' + sz + '"].active');
+        if (active) total += price * (parseInt(active.textContent)||0);
       });
     } else {
       var k = name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g,'_');
@@ -290,6 +303,7 @@ function updateSubtotal() {
       if (el) total += price * (parseInt(el.value)||0);
     }
   });
+
   subtotal = total;
   var el = document.getElementById('subtotal-num');
   if (el) el.textContent = total.toLocaleString();
@@ -299,22 +313,34 @@ function getItems() {
   var items = [];
   var products = groupData.products || [];
   var members = groupData.members || [];
+
   products.forEach(function(p) {
     var name = p.name;
     if (p.type === 'grid') {
       var q = {};
-      members.forEach(function(m) { q[m] = getGridVal(name, m, 'gr'); });
+      members.forEach(function(m) {
+        var customEl = document.querySelector('[data-gc="' + name + '_' + m + '"]');
+        var customVal = customEl ? (parseInt(customEl.value)||0) : 0;
+        if (customVal > 0) { q[m] = customVal; return; }
+        var active = document.querySelector('[data-cell-key="' + name + '_' + m + '"].active');
+        q[m] = active ? (parseInt(active.textContent)||0) : 0;
+      });
       items.push({productName: name, quantities: q});
     } else if (p.type === 'gridCustom') {
       var q = {};
       (p.options||'').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(opt) {
-        q[opt] = getGridVal(name, opt, 'gc');
+        var active = document.querySelector('[data-cell-key="' + name + '_' + opt + '"].active');
+        q[opt] = active ? (parseInt(active.textContent)||0) : 0;
       });
       items.push({productName: name, quantities: q});
     } else if (p.type === 'size') {
       var q = {};
       (p.sizes||p.options||'XS,S,M,L,XL,XXL').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(sz) {
-        q[sz] = getGridVal(name, sz, 'sz');
+        var customEl = document.querySelector('[data-sc="' + name + '_' + sz + '"]');
+        var customVal = customEl ? (parseInt(customEl.value)||0) : 0;
+        if (customVal > 0) { q[sz] = customVal; return; }
+        var active = document.querySelector('[data-cell-key="' + name + '_' + sz + '"].active');
+        q[sz] = active ? (parseInt(active.textContent)||0) : 0;
       });
       items.push({productName: name, quantities: q});
     } else {

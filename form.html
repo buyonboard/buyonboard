@@ -38,8 +38,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 .grid-wrap { overflow-x: auto; padding: 0 0 4px; }
 .grid-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .grid-table th { color: var(--text-muted); font-weight: 400; padding: 5px 4px; text-align: center; font-size: 12px; }
-.grid-table td { padding: 6px 4px; text-align: center; border-top: 1px solid #f0f0f0; }
-.grid-table td:first-child { text-align: left; padding-left: 16px; font-weight: 500; }
+.grid-table td { padding: 4px 2px; text-align: center; border-top: 1px solid #f0f0f0; }
+.grid-table td:first-child { text-align: left; padding-left: 16px; font-weight: 500; min-width: 36px; }
+.qty-cell { display: inline-block; width: 34px; height: 34px; line-height: 34px; text-align: center; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; background: white; color: var(--text); -webkit-tap-highlight-color: transparent; user-select: none; }
+.qty-cell.active { background: var(--blue); color: white; border-color: var(--blue); }
 .subtotal-card { background: var(--blue-dark); border-radius: 14px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .subtotal-label { color: rgba(255,255,255,0.75); font-size: 13px; }
 .subtotal-amount { color: white; font-size: 24px; font-weight: 700; }
@@ -145,10 +147,10 @@ function renderProduct(product, members) {
 
   if (product.type === 'grid') {
     var memberRows = members.map(function(m) {
-      var radios = [0,1,2,3,4,5].map(function(n) {
-        return '<td><input type="radio" name="gr_' + name + '_' + m + '" value="' + n + '" ' + (n===0?'checked':'') + ' onchange="updateSubtotal()" /></td>';
+      var cells = [0,1,2,3,4,5].map(function(n) {
+        return '<td><span class="qty-cell' + (n===0?' active':'') + '" onclick="selectCell(this,\'' + name + '\',\'' + m + '\',\'gr\',' + n + ')">' + n + '</span></td>';
       }).join('');
-      return '<tr><td>' + m + '</td>' + radios
+      return '<tr><td>' + m + '</td>' + cells
         + '<td><input class="custom-num" type="number" inputmode="numeric" min="0" max="99" placeholder="自填" data-gc="' + name + '_' + m + '" oninput="onGC(this,\'' + name + '\',\'' + m + '\')" /></td></tr>';
     }).join('');
     return '<div class="card"><div class="product-name">' + name + ' <span class="badge badge-grid">成員選款</span></div>'
@@ -160,10 +162,10 @@ function renderProduct(product, members) {
   if (product.type === 'gridCustom') {
     var opts = (product.options || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
     var optRows = opts.map(function(opt) {
-      var radios = [0,1,2,3,4,5].map(function(n) {
-        return '<td><input type="radio" name="gc_' + name + '_' + opt + '" value="' + n + '" ' + (n===0?'checked':'') + ' onchange="updateSubtotal()" /></td>';
+      var cells = [0,1,2,3,4,5].map(function(n) {
+        return '<td><span class="qty-cell' + (n===0?' active':'') + '" onclick="selectCell(this,\'' + name + '\',\'' + opt + '\',\'gc\',' + n + ')">' + n + '</span></td>';
       }).join('');
-      return '<tr><td>' + opt + '</td>' + radios + '</tr>';
+      return '<tr><td>' + opt + '</td>' + cells + '</tr>';
     }).join('');
     return '<div class="card"><div class="product-name">' + name + ' <span class="badge badge-grid">款式選擇</span></div>'
       + '<div class="product-price">NT$ ' + price + ' / 個</div>'
@@ -174,10 +176,10 @@ function renderProduct(product, members) {
   if (product.type === 'size') {
     var sizes = (product.sizes || product.options || 'XS,S,M,L,XL,XXL').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
     var sizeRows = sizes.map(function(sz) {
-      var radios = [0,1,2,3,4,5].map(function(n) {
-        return '<td><input type="radio" name="sz_' + name + '_' + sz + '" value="' + n + '" ' + (n===0?'checked':'') + ' onchange="updateSubtotal()" /></td>';
+      var cells = [0,1,2,3,4,5].map(function(n) {
+        return '<td><span class="qty-cell' + (n===0?' active':'') + '" onclick="selectCell(this,\'' + name + '\',\'' + sz + '\',\'sz\',' + n + ')">' + n + '</span></td>';
       }).join('');
-      return '<tr><td>' + sz + '</td>' + radios
+      return '<tr><td>' + sz + '</td>' + cells
         + '<td><input class="custom-num" type="number" inputmode="numeric" min="0" max="99" placeholder="自填" data-sc="' + name + '_' + sz + '" oninput="onSC(this,\'' + name + '\',\'' + sz + '\')" /></td></tr>';
     }).join('');
     return '<div class="card"><div class="product-name">' + name + ' <span class="badge" style="background:#fef3c7;color:#92400e">服裝尺寸</span></div>'
@@ -204,20 +206,52 @@ function adj(n, d) {
   updateSubtotal();
 }
 
+function selectCell(el, name, key, prefix, val) {
+  // 取消同一列所有按鈕的 active
+  var row = el.parentElement.parentElement;
+  var cells = row.querySelectorAll('.qty-cell');
+  for (var i = 0; i < cells.length; i++) cells[i].classList.remove('active');
+  el.classList.add('active');
+  // 清空自填欄
+  var dataKey = prefix === 'sz' ? 'sc' : 'gc';
+  var customEl = row.querySelector('[data-' + dataKey + ']');
+  if (customEl) customEl.value = '';
+  updateSubtotal();
+}
+
 function onGC(input, name, member) {
   if ((parseInt(input.value)||0) > 0) {
-    var rs = document.querySelectorAll('input[name="gr_' + name + '_' + member + '"]');
-    for (var i=0; i<rs.length; i++) rs[i].checked = false;
+    var row = input.parentElement.parentElement;
+    var cells = row.querySelectorAll('.qty-cell');
+    for (var i = 0; i < cells.length; i++) cells[i].classList.remove('active');
   }
   updateSubtotal();
 }
 
 function onSC(input, name, sz) {
   if ((parseInt(input.value)||0) > 0) {
-    var rs = document.querySelectorAll('input[name="sz_' + name + '_' + sz + '"]');
-    for (var i=0; i<rs.length; i++) rs[i].checked = false;
+    var row = input.parentElement.parentElement;
+    var cells = row.querySelectorAll('.qty-cell');
+    for (var i = 0; i < cells.length; i++) cells[i].classList.remove('active');
   }
   updateSubtotal();
+}
+
+function getGridVal(name, key, prefix) {
+  var dataAttr = prefix === 'sz' ? '[data-sc="' + name + '_' + key + '"]' : '[data-gc="' + name + '_' + key + '"]';
+  var customEl = document.querySelector(dataAttr);
+  var customVal = customEl ? (parseInt(customEl.value)||0) : 0;
+  if (customVal > 0) return customVal;
+  // 找同一列的 active 按鈕
+  var rows = document.querySelectorAll('tr');
+  for (var i = 0; i < rows.length; i++) {
+    var firstTd = rows[i].querySelector('td:first-child');
+    if (firstTd && firstTd.textContent.trim() === key) {
+      var active = rows[i].querySelector('.qty-cell.active');
+      if (active) return parseInt(active.textContent) || 0;
+    }
+  }
+  return 0;
 }
 
 function updateSubtotal() {
@@ -228,23 +262,14 @@ function updateSubtotal() {
     var price = Number(p.price) || 0;
     var name = p.name;
     if (p.type === 'grid') {
-      members.forEach(function(m) {
-        var ce = document.querySelector('[data-gc="' + name + '_' + m + '"]');
-        var cv = ce ? (parseInt(ce.value)||0) : 0;
-        if (cv > 0) { total += price * cv; }
-        else { var c = document.querySelector('input[name="gr_' + name + '_' + m + '"]:checked'); if (c) total += price * parseInt(c.value); }
-      });
+      members.forEach(function(m) { total += price * getGridVal(name, m, 'gr'); });
     } else if (p.type === 'gridCustom') {
       (p.options||'').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(opt) {
-        var c = document.querySelector('input[name="gc_' + name + '_' + opt + '"]:checked');
-        if (c) total += price * parseInt(c.value);
+        total += price * getGridVal(name, opt, 'gc');
       });
     } else if (p.type === 'size') {
       (p.sizes||p.options||'XS,S,M,L,XL,XXL').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(sz) {
-        var ce = document.querySelector('[data-sc="' + name + '_' + sz + '"]');
-        var cv = ce ? (parseInt(ce.value)||0) : 0;
-        if (cv > 0) { total += price * cv; }
-        else { var c = document.querySelector('input[name="sz_' + name + '_' + sz + '"]:checked'); if (c) total += price * parseInt(c.value); }
+        total += price * getGridVal(name, sz, 'sz');
       });
     } else {
       var k = name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g,'_');
@@ -265,27 +290,18 @@ function getItems() {
     var name = p.name;
     if (p.type === 'grid') {
       var q = {};
-      members.forEach(function(m) {
-        var ce = document.querySelector('[data-gc="' + name + '_' + m + '"]');
-        var cv = ce ? (parseInt(ce.value)||0) : 0;
-        if (cv > 0) { q[m] = cv; }
-        else { var c = document.querySelector('input[name="gr_' + name + '_' + m + '"]:checked'); q[m] = c ? parseInt(c.value) : 0; }
-      });
+      members.forEach(function(m) { q[m] = getGridVal(name, m, 'gr'); });
       items.push({productName: name, quantities: q});
     } else if (p.type === 'gridCustom') {
       var q = {};
       (p.options||'').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(opt) {
-        var c = document.querySelector('input[name="gc_' + name + '_' + opt + '"]:checked');
-        q[opt] = c ? parseInt(c.value) : 0;
+        q[opt] = getGridVal(name, opt, 'gc');
       });
       items.push({productName: name, quantities: q});
     } else if (p.type === 'size') {
       var q = {};
       (p.sizes||p.options||'XS,S,M,L,XL,XXL').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(sz) {
-        var ce = document.querySelector('[data-sc="' + name + '_' + sz + '"]');
-        var cv = ce ? (parseInt(ce.value)||0) : 0;
-        if (cv > 0) { q[sz] = cv; }
-        else { var c = document.querySelector('input[name="sz_' + name + '_' + sz + '"]:checked'); q[sz] = c ? parseInt(c.value) : 0; }
+        q[sz] = getGridVal(name, sz, 'sz');
       });
       items.push({productName: name, quantities: q});
     } else {

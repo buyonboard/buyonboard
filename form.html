@@ -169,8 +169,7 @@ function renderForm() {
 function renderProduct(product, members) {
   var name = product.name;
   var price = Number(product.price).toLocaleString();
-  var imageHtml = product.imageUrl ? '<img src="' + product.imageUrl + '" style="width:100%;max-height:220px;object-fit:cover;display:block;" onerror="this.style.display=\'none\'" />' : '';
-
+ var imageHtml = product.imageUrl ? '<img src="' + product.imageUrl + '" style="width:100%;max-height:300px;object-fit:contain;display:block;background:#f8f9fa;" onerror="this.style.display=\'none\'" />' : '';
   if (product.type === 'grid') {
     var memberRows = members.map(function(m) {
       var cells = [0,1,2,3,4,5].map(function(n) {

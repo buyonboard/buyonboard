@@ -406,7 +406,7 @@ function submitForm() {
       action: 'submitOrder',
       groupId: groupId,
       formData: {
-        nickname: nickname, realName: realName, email: sendEmail ? email : '',
+        nickname: nickname, realName: realName, email: email : '',
         items: getItems(),
         bankAccount: parts[0] + '(' + parts[1] + ') ' + parts[2],
         bankLast5: last5,

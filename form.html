@@ -420,7 +420,13 @@ function submitForm() {
   .then(function(r) { return r.json(); })
   .then(function(res) {
     if (res.success) {
-      document.getElementById('app').innerHTML = '<div class="container"><div class="success-screen"><div class="success-icon">✅</div><h2>填單完成！</h2><p>感謝你的訂購，我們會盡快確認匯款資訊。<br>如為無卡付款，請記得至 Line / IG 私訊補傳明細截圖。<br><br>品項小計：<strong>NT$ ' + (res.subtotal||0).toLocaleString() + '</strong></p></div></div>';
+      document.getElementById('app').innerHTML = '<div class="container"><div class="success-screen"><div class="success-icon">✅</div><h2>填單完成！</h2><p>感謝跟團，我們會盡快對帳。<br><br>品項小計：<strong>NT$ ' + (res.subtotal||0).toLocaleString() + '</strong></p>'
++ '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:16px;margin:20px 0;text-align:left;">'
++ '<p style="font-weight:700;color:#92400e;margin-bottom:8px;">⚠️ 無卡付款請注意！</p>'
++ '<p style="font-size:13px;color:#92400e;margin-bottom:12px;">請回傳匯款明細截圖給我們，以便確認匯款！</p>'
++ '<a href="https://line.me/R/ti/p/@099patll" target="_blank" style="display:block;background:#06C755;color:white;text-align:center;padding:12px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;">📲 點我回傳明細到官方 Line</a>'
++ '</div>'
++ '</div></div>'
     } else {
       btn.disabled = false;
       btn.textContent = '確認送出訂單';

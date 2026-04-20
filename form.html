@@ -73,7 +73,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 // ====================================================
 //  ⚙️ 填入你的 GAS 部署網址
 // ====================================================
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbwwdGJwI9jIom_IYXOmHz76ykh65q1_EyujwT3WT14hxzZW_mMl3aG22VDNgSdVGj_6/exec';
+var GAS_URL = '請填入你的GAS部署網址';
 // 格式：https://script.google.com/macros/s/【亂碼】/exec
 // ====================================================
 
@@ -159,7 +159,7 @@ function renderForm() {
     + '<div class="field"><label>備註</label><textarea id="f-note" placeholder="有任何特殊需求請在此說明" rows="5" style="resize:vertical;min-height:100px;"></textarea></div>'
     + '</div></div>'
     + '<button class="submit-btn" id="submit-btn" onclick="submitForm()">確認送出訂單</button>'
-    + '<div style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:12px;padding-bottom:20px">送出後請截圖保存，如需上傳無卡明細請至 Line / IG 私訊補傳</div>'
+    + '<div style="text-align:center;font-size:14px;font-weight:700;color:#92400e;margin-top:12px;padding-bottom:20px;">⚠️ 如需上傳無卡明細請至 Line / IG 私訊補傳</div>'
     + '</div>';
 
   document.getElementById('app').innerHTML = html;
@@ -169,7 +169,8 @@ function renderForm() {
 function renderProduct(product, members) {
   var name = product.name;
   var price = Number(product.price).toLocaleString();
- var imageHtml = product.imageUrl ? '<img src="' + product.imageUrl + '" style="width:100%;max-height:300px;object-fit:contain;display:block;background:#f8f9fa;" onerror="this.style.display=\'none\'" />' : '';
+  var imageHtml = product.imageUrl ? '<img src="' + product.imageUrl + '" style="width:100%;max-height:300px;object-fit:contain;display:block;background:#f8f9fa;" onerror="this.style.display=\'none\'" />' : '';
+
   if (product.type === 'grid') {
     var memberRows = members.map(function(m) {
       var cells = [0,1,2,3,4,5].map(function(n) {
@@ -420,7 +421,14 @@ function submitForm() {
   .then(function(r) { return r.json(); })
   .then(function(res) {
     if (res.success) {
-      document.getElementById('app').innerHTML = '<div class="container"><div class="success-screen"><div class="success-icon">✅</div><h2>填單完成！</h2><p>感謝你的訂購，我們會盡快確認匯款資訊。<br>如為無卡付款，請記得至 Line / IG 私訊補傳明細截圖。<br><br>品項小計：<strong>NT$ ' + (res.subtotal||0).toLocaleString() + '</strong></p></div></div>';
+      document.getElementById('app').innerHTML = '<div class="container"><div class="success-screen"><div class="success-icon">✅</div><h2>填單完成！</h2><p>感謝你的訂購，我們會盡快確認匯款資訊。<br><br>品項小計：<strong>NT$ ' + (res.subtotal||0).toLocaleString() + '</strong></p>'
+        + '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:16px;margin:20px 0;text-align:left;">'
+        + '<p style="font-weight:700;color:#92400e;margin-bottom:8px;">⚠️ 無卡付款請注意！</p>'
+        + '<p style="font-size:13px;color:#92400e;margin-bottom:12px;">請回傳匯款明細截圖給我們，以便確認匯款！</p>'
+        + '<a href="https://line.me/R/ti/p/@099patll" target="_blank" style="display:block;background:#06C755;color:white;text-align:center;padding:12px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;margin-bottom:16px;">📲 點我回傳明細到官方 Line</a>'
+        + '<a href="https://www.instagram.com/buyonboard" target="_blank" style="display:block;background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:white;text-align:center;padding:12px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;">📸 點我回傳明細到 IG</a>'
+        + '</div>'
+        + '</div></div>';
     } else {
       btn.disabled = false;
       btn.textContent = '確認送出訂單';
